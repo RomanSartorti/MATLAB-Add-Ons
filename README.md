@@ -7,8 +7,13 @@ This is just a small snippet that creates a list in the terminal from given data
 ![](Miscellaneous/GIF/terminalList.gif)
 
 ## GenerateTerminalMsg
+Generates a terminal message sourrounded by a box. Sometimes useful for long running code to give an update when starting a new section, for instance.
+
+![](Miscellaneous/PNG/generateTerminalMessage.png)
 
 ## CreateFcnHeader
+Simply creates a function header. Useful if you want your function header being consistent through all of your created functions.
+
 ![](Miscellaneous/PNG/createFcnHeader.png)
 
 ## NewtonCotes/NewtonCotes2D
