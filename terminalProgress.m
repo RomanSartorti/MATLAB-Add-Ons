@@ -2,7 +2,7 @@ classdef terminalProgress
 %%TERMINALPROGRESS This class creates a progressbar in the terminal
 %  INPUT:
 %     -   maxIter:  maximum iterations
-%     -   width:    (optional) line width
+%     -   width:    (optional, default = 4*20) line width
 % 
 % Creator: Roman Sartorti
 % Hamburg, Oktober 2020
