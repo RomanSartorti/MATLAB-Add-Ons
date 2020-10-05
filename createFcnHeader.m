@@ -13,7 +13,7 @@ function createFcnHeader(inArg)
 % CREATEFCNHEADER() - opens a prompt where you can paste the function
 % definition into - ATTENTION: definition needs to be copied BEFORE calling
 % the function!
-% CREATEFCNHEADER('[a,b] = myfun(x,y,z)) - returns directly the header into
+% CREATEFCNHEADER('[a,b] = myfun(x,y,z)') - returns directly the header into
 % the terminal
 %
 
