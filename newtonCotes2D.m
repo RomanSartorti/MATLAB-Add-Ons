@@ -24,6 +24,7 @@ function out = newtonCotes2D(fh,nSupportsX,nSupportsY,xmin,xmax,ymin,ymax)
 %                                                                              %
 %                                   CHANGELOG                                  %
 %   - 05.10.20: created function 
+%               eliminated loops by using clever matrix vector products
 %                                                                              %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -39,16 +40,22 @@ function out = newtonCotes2D(fh,nSupportsX,nSupportsY,xmin,xmax,ymin,ymax)
     fEval = zeros(nSupportsX,1);
     
     result = 0;
-    for i =1:nSupportsX
-        wx = newtonCotesTabular.(['n',num2str(nSupportsX-1)])(i);
-        Y = ymin;
-        for j = 1:nSupportsY
-            wy = newtonCotesTabular.(['n',num2str(nSupportsY-1)])(j);
-            result = result + wx*wy*fh(X,Y);
-            Y = Y + stepY;
-        end
-        X = X + stepX;
-    end
+    xx = xmin:stepX:xmax;
+    yy = ymin:stepY:ymax;
+    
+    tmp = fh(xx,yy');
+    result = newtonCotesTabular.(['n',num2str(nSupportsY-1)])*...
+             tmp* newtonCotesTabular.(['n',num2str(nSupportsX-1)])';
+%     for i =1:nSupportsX
+%         wx = newtonCotesTabular.(['n',num2str(nSupportsX-1)])(i);
+%         Y = ymin;
+%         for j = 1:nSupportsY
+%             wy = newtonCotesTabular.(['n',num2str(nSupportsY-1)])(j);
+%             result = result + wx*wy*fh(X,Y);
+%             Y = Y + stepY;
+%         end
+%         X = X + stepX;
+%     end
     out = intervalX*intervalY*result;
 %     out = interval*(newtonCotesTabular.(['n',num2str(nIntervalsX)]).*newtonCotesTabular.(['n',num2str(nIntervalsY)]))*fEval;
 end
