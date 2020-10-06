@@ -68,7 +68,7 @@ function [x,y,timeout] = LMM(fh,x,y0,schema, opt)
     %length of y
     ly = length(y0);
     y = zeros(length(x),length(y0))';
-    y(:,1) = y0;
+    y(:,size(y0,2)) = y0;
     h = diff(x);
 
     isimplicit = b(end)~=0;
@@ -91,12 +91,16 @@ function [x,y,timeout] = LMM(fh,x,y0,schema, opt)
     %%%%%%%%%%% Estimation of first k-steps via explicit ode45 method %%%%%%%%%
     % to get a highly reliable result
 
-    temp = 0:h:(k)*h;
-    %     [~,y_initial] = ode45(fh,temp,[1]);
-    [~,y_initial_test] = RKMGeneral(fh,temp,y0,Butchers.ode45);
-    y(1:length(y0),1:size(y_initial_test,1)) = y_initial_test';
-    offset = size(y_initial_test,1)-k;
-
+    if size(y0,2)<s
+        warning('Not enough initial values for all steps. Those will be estimated by an ode45 method.')
+        temp = 0:h:(k)*h;
+        %     [~,y_initial] = ode45(fh,temp,[1]);
+        [~,y_initial_test] = RKMGeneral(fh,temp,y0,Butchers.ode45);
+        y(1:length(y0),1:size(y_initial_test,1)) = y_initial_test';
+        offset = size(y_initial_test,1)-k;
+    else
+        disp('Enough initial values for all steps :-)')
+    end
     if isimplicit
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % Method is implicit, root seeking needed.
