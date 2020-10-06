@@ -1,4 +1,5 @@
 function [x,y,timeout] = RKMGeneral(fh,x,y0, Butcher, opt)
+%%RKMGENERAL method to solve an 
     % INPUT:
     %   -   fh:     ODE function handle
     %   -   x:      Vector with x-values (usually t)
@@ -130,7 +131,7 @@ function [x,y,timeout] = RKMGeneral(fh,x,y0, Butcher, opt)
                 elseif strcmp(opt.Solver,'Newton')
                     K = newtons(fhK,K0(:),opt);
                 elseif strcmp(opt.Solver,'TrustRegion')
-                    K = trustregion(fhK,K0,opt);
+%                     K = trustregion(fhK,K0,opt);
                 else
                     error('Unknown solver! Please check your input options');
 
@@ -160,53 +161,50 @@ function [x,y,timeout] = RKMGeneral(fh,x,y0, Butcher, opt)
                 y(:,i+1) = y(:,i)+h(i)*K*c';
             end
         else
-        %% with stepsize control
-%         c_hat = [1,0];
-%         c_hat = [7/24 1/4 1/3 1/8];
-%         p = 3
-        tau = opt.TolAdaptive;
-                
-        T = 0;
-        Tend = max(x);
-        i = 1;
-        h = [h,zeros(size(h)),zeros(size(h)),zeros(size(h))];
-        y = [y,zeros(size(y)),zeros(size(y)),zeros(size(y))];
-        x = [x,zeros(size(x)),zeros(size(x)),zeros(size(x))];
-        imax = length(x);
-        h = sparse(h);
-        y = sparse(y);
-        x = sparse(x);
-        K = zeros(ly,s);
-        while T + h(i) <= Tend
-            E = 0.5;
-            while E < 1
-                for ki = 1:s
-                    K(:,ki) = fh(x(i)+a(ki)*h(i),y(:,i)+h(i)*(K*(B(ki,:)')));
+            %% with stepsize control
+            tau = opt.TolAdaptive;
+
+            T = 0;
+            Tend = max(x);
+            i = 1;
+            h = [h,zeros(size(h)),zeros(size(h)),zeros(size(h))];
+            y = [y,zeros(size(y)),zeros(size(y)),zeros(size(y))];
+            x = [x,zeros(size(x)),zeros(size(x)),zeros(size(x))];
+            imax = length(x);
+            h = sparse(h);
+            y = sparse(y);
+            x = sparse(x);
+            K = zeros(ly,s);
+            while T + h(i) <= Tend
+                E = 0.5;
+                while E < 1
+                    for ki = 1:s
+                        K(:,ki) = fh(x(i)+a(ki)*h(i),y(:,i)+h(i)*(K*(B(ki,:)')));
+                    end
+
+                    y(:,i+1) = y(:,i)+h(i)*K*c';
+
+                    y_hat = y(:,i)+h(i)*K*c_hat';
+
+                    deltay = max(norm(y(:,i+1)-y_hat),tau); 
+                    E = (tau/(deltay))^(1/p);
+                    h(i) = h(i)*E;
+
+    %                 % bound maximal stepsize by initialized stepsize
+    %                 if h(i) > 10*h_initial
+    %                     h(i) = 10*h_initial;
+    %                     break
+    %                 end
                 end
-                
-                y(:,i+1) = y(:,i)+h(i)*K*c';
-                
-                y_hat = y(:,i)+h(i)*K*c_hat';
-                
-                deltay = max(norm(y(:,i+1)-y_hat),tau); 
-                E = (tau/(deltay))^(1/p);
-                h(i) = h(i)*E;
-                
-%                 % bound maximal stepsize by initialized stepsize
-%                 if h(i) > 10*h_initial
-%                     h(i) = 10*h_initial;
-%                     break
-%                 end
+                T = T+h(i);
+                x(i) = T;
+                h(i+1) = h(i);
+                i = i+1;
+                if i == imax
+                    warning('Couldn''t finish, stepsizes to small, s.t produced to much steps :-(')
+                    return
+                end
             end
-            T = T+h(i);
-            x(i) = T;
-            h(i+1) = h(i);
-            i = i+1;
-            if i == imax
-                warning('Couldnt finish, stepsizes to small, s.t produced to much steps :-(')
-                return
-            end
-        end
         y = y(:,1:i);
         x = x(:,1:i);
         end
@@ -237,68 +235,21 @@ function [x,y,timeout] = RKMGeneral(fh,x,y0, Butcher, opt)
     end
 end
 
-function ButcherWrap = ButcherWraper(ButcherTab)
-%BUTCHERWR Wraps a Butcher Tableau in its splitted form if needed.
-    % Splitting Butcher
-    ButcherWrap = [];
-    stages = size(ButcherTab,2)-1;
-    isadaptive = stages+1<length(ButcherTab);
-    ButcherWrap.a = ButcherTab(1:stages,1);
-    ButcherWrap.B = ButcherTab(1:stages,2:end);
-    ButcherWrap.c = ButcherTab(stages+1,2:end);
-    if isadaptive
-        ButcherWrap.c_hat = ButcherTab(end,2:end);
-        ButcherWrap.p = ButcherTab(end-1,1);
-    else
-        ButcherWrap.c_hat = [];
-        ButcherWrap.p = [];
-    end
-    
-end
-
-function yout = newtons(fh,y0,opt)
-%% Simple Newtons method.
-    if nargin < 3
-        opt.maxNewtonIter = 1000;
-        opt.Tol = 1e-15;
-        opt.FinalJacobianOut = false;
-        opt.JacobianPreDefined = false;
-        opt.FinDiffStep = 1e-10;
-    end
-
-    e = 1;
-    y = y0;
-    count = 0;
-    delta = opt.FinDiffStep ;
-
-    F = fh(y) ;
-
-    while e > opt.Tol && count < opt.maxNewtonIter
-        J = zeros(length(y0),length(y0));
-
-        %% Estimate Jacobian via finite differences:
-        for i = 1: length(y0)
-            dy = zeros(length(y0),1);
-            dy(i) = delta;
-            fp = fh(y+dy);
-            fn = fh(y-dy);
-            J(:,i) = (fp-fn)/(2*delta);
-        end
-        yold = y;
-        y = y - J\F;
-
-        F = fh(y);
-       
-        e = norm(y-yold);
-%         e = max(abs(F));
-        count = count +1;
-        if (count == opt.maxNewtonIter)
-            warning('Newton seems to find no minimum')
-        end
-    end
-    if opt.FinalJacobianOut
-        disp('final Jacobian=');
-        disp(J);
-    end
-    yout = y;
-end
+% function ButcherWrap = ButcherWraper(ButcherTab)
+% %BUTCHERWR Wraps a Butcher Tableau in its splitted form if needed.
+%     % Splitting Butcher
+%     ButcherWrap = [];
+%     stages = size(ButcherTab,2)-1;
+%     isadaptive = stages+1<length(ButcherTab);
+%     ButcherWrap.a = ButcherTab(1:stages,1);
+%     ButcherWrap.B = ButcherTab(1:stages,2:end);
+%     ButcherWrap.c = ButcherTab(stages+1,2:end);
+%     if isadaptive
+%         ButcherWrap.c_hat = ButcherTab(end,2:end);
+%         ButcherWrap.p = ButcherTab(end-1,1);
+%     else
+%         ButcherWrap.c_hat = [];
+%         ButcherWrap.p = [];
+%     end
+%     
+% end
