@@ -5,9 +5,7 @@ function [x,y,timeout] = LMM(fh,x,y0,schema, opt)
 %   -   fh:     ODE function handle
 %   -   x:      Vector with x-values (usually t)
 %   -   y0:     Initial Values
-%   -   Butcher:    (optional) Butcher Tableau either as matrix or as
-%                   predefined struckt containing vectors Butcher.a [s by 1] ,
-%                   matrix Butcher.B [s by s], vector Butcher.c [1 by s ]
+%   -   LMM:    (optional) LMM schema as matrix
 %   -   opts:       (optional) Options struct
 %       -   'FinalJacobianOut': states if the final Jacobian after
 %                               Newton iteration should be displayed
@@ -26,6 +24,9 @@ function [x,y,timeout] = LMM(fh,x,y0,schema, opt)
     defaults = {false,10000,1e-8,false,false,'Newton',false,1e-10};
     if nargin < 5
         opt = [];
+    end
+    if ~iscolumn(y0)
+        y0 = y0';
     end
 
     % Check for incoming options struct
@@ -100,6 +101,7 @@ function [x,y,timeout] = LMM(fh,x,y0,schema, opt)
         offset = size(y_initial_test,1)-k;
     else
         disp('Enough initial values for all steps :-)')
+        offset = 0;
     end
     if isimplicit
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

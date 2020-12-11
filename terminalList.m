@@ -1,4 +1,4 @@
-classdef terminalList
+classdef terminalList < handle
 %TERMINALLIST 
 % Class to create lists in terminal, e.g. to show
 % proceedings due to interatio processes. The user can define variable
@@ -25,24 +25,26 @@ classdef terminalList
 %   - 04.10.20: created function 
 %   - 05.10.20: now data is distributed well even if no variable names are
 %               given
+%   - 07.11.20: enlarged the distance to ensure that even negative numbers
+%               fit the table pattern
 %                                                                              %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     properties
         % Box width
         nLine = 4*20;       % line width 
-        sign = '#';         % Sign to be used as limiter
+        symbol = '#';         % symbol to be used as limiter
         ListTitle {string}; % Title of the list
         varnames;           % cell array containing the variable names
     end
     properties(Access = protected)
         startendline;
-        tabspaces = 16;
+        tabspaces = 18;
         numlen = 10;        % length of each numer in scientific notation
                             % 0.0000e+01
     end
     methods
-        function obj = terminalList(varnames,ListTitle,sign)
+        function obj = terminalList(varnames,ListTitle,symbol)
             %TERMINALLIST Construct an instance of this class
             %   Detailed explanation goes here
             
@@ -50,17 +52,17 @@ classdef terminalList
                 obj.ListTitle = ListTitle;
             end
             if nargin == 3
-                obj.sign = sign;
+                obj.symbol = symbol;
             end
             
-            startEndLine = repmat(obj.sign,1,obj.nLine);
+            startEndLine = repmat(obj.symbol,1,obj.nLine);
             obj.startendline = startEndLine;
-            if strcmp(obj.sign,'%')
-                obj.sign = '%%';
+            if strcmp(obj.symbol,'%')
+                obj.symbol = '%%';
             end
             
             if nargin >= 1
-                obj.tabspaces = round(obj.nLine/(length(varnames)+1));
+                obj.tabspaces = round(obj.nLine/(length(varnames)+1))+1;
                 fprintf('%s\n',startEndLine)
                 if nargin == 2
                     fprintf('%s\n',ListTitle)
@@ -91,15 +93,22 @@ classdef terminalList
             
             lastlen = round(obj.tabspaces/3);
             for i = 1:length(data)
+                % create white spaces ahead 
                 strtab = repmat(' ',1,obj.tabspaces-lastlen);
                 fprintf('%s%1.4e',strtab, data(i))
                 lastlen = obj.numlen;
+                
+                % Check if number is negative to add an additional white
+                % space to the prespace
+                if sign(data(i)) == -1
+                    lastlen = lastlen + 1;
+                end
             end
             fprintf('\n')
         end
         function termination(obj)
             fprintf(obj.startendline);
-            fprintf('\nProcess termianted \n')
+            fprintf('\nProcess terminated \n')
         end
     end
 end

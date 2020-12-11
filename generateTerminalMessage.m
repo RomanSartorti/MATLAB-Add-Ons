@@ -21,6 +21,7 @@ function generateTerminalMessage(msg,sign,nLine)
 %                                   CHANGELOG                                  %
 %   - 05.10.20: changed header, implemented usage of cell array or string
 %               as message input 
+%   - 23.11.20: solved bug when using structs instead of string
 %                                                                              %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -32,7 +33,7 @@ function generateTerminalMessage(msg,sign,nLine)
     if ~iscell(msg)
         C2 = strsplit(str,',');
     else
-        C2 = str;
+        C2 = string(str);
     end
     
     % Breite der Box
